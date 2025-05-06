@@ -1,11 +1,22 @@
 // src/stream/stream.controller.ts
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query } from '@nestjs/common';
 import { StreamService } from './stream.service';
 
 @Controller('/stream')
 export class StreamController {
   constructor(private readonly streamService: StreamService) {}
 
+  @Get('/check-video')
+  async checkVideo(
+    @Query('videoUrl') videoUrl: string,
+    @Query('platform') platform: string,
+  ) {
+    if (!videoUrl || !platform) {
+      return { success: false, message: 'Thiếu videoUrl hoặc platform' };
+    }
+
+    return await this.streamService.checkVideoForPlatform(videoUrl, platform);
+  }
   // YouTube
   @Post('/youtube/start')
   startYouTube(@Body() body: { videoUrl: string; rtmpUrl: string }) {

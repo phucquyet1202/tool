@@ -55,6 +55,34 @@ export class StreamService {
     }
   }
 
+  // check tỉ lệ khung hình
+  async checkVideoForPlatform(videoUrl: string, platform: string) {
+    try {
+      const result = await this.ffmpegService.checkVideoAspectRatio(
+        videoUrl,
+        platform,
+      );
+
+      if (result.valid) {
+        return {
+          success: true,
+          message: `Video phù hợp tỉ lệ cho nền tảng "${platform}".`,
+          details: result,
+        };
+      } else {
+        return {
+          success: false,
+          message: `Video KHÔNG phù hợp tỉ lệ cho nền tảng "${platform}".`,
+          details: result,
+        };
+      }
+    } catch (err) {
+      return {
+        success: false,
+        message: typeof err === 'string' ? err : 'Đã xảy ra lỗi.',
+      };
+    }
+  }
   // // Tổng hợp
   // listAllActiveStreams() {
   //   return this.ffmpegService.listActiveLivestreams();

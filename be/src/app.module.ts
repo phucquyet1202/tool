@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { StreamModule } from './stream/stream.module';
 // import { RtmpService } from './rtmp/rtmp.service';
 import { FfmpegService } from './ffmpeg/ffmpeg.service';
+import { FfmpegGateway } from './ffmpeg/ffmpeg.gateway';
 
 @Module({
   imports: [StreamModule],
@@ -11,6 +12,7 @@ import { FfmpegService } from './ffmpeg/ffmpeg.service';
   providers: [
     AppService,
     FfmpegService,
+    FfmpegGateway,
     //  RtmpService
   ],
 })
