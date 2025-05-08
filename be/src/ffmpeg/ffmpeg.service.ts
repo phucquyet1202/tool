@@ -1,24 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import ffmpeg from 'fluent-ffmpeg';
-import { exec } from 'child_process';
-import * as path from 'path';
-import * as fs from 'fs';
-import * as os from 'os';
-import { randomUUID } from 'crypto';
+import { spawn } from 'child_process';
 import { FfmpegGateway } from './ffmpeg.gateway';
-
-type AspectRatioResult = {
-  width: number;
-  height: number;
-  aspectRatio: string;
-  valid: boolean;
-  expectedAspectRatios: string[];
-};
 
 @Injectable()
 export class FfmpegService {
   private processes: Record<string, ffmpeg.FfmpegCommand> = {};
-  private loopCounts: Record<string, number> = {};
 
   constructor(private readonly ffmpegGateway: FfmpegGateway) {
     ffmpeg.setFfmpegPath(
@@ -26,92 +13,93 @@ export class FfmpegService {
     );
   }
 
-  private downloadVideo(videoUrl: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const ytDlpPath = path.resolve('D:/ffmpeg/yt-dlp.exe');
-      const outputPath = path.join(os.tmpdir(), `${randomUUID()}.mp4`);
-      const command = `"${ytDlpPath}" -f bestvideo+bestaudio --merge-output-format mp4 -o "${outputPath}" "${videoUrl}"`;
+  private readonly ytDlpPath = 'D:/ffmpeg/yt-dlp.exe';
 
-      exec(command, (error, stdout, stderr) => {
-        if (error) {
-          console.error('yt-dlp error:', stderr || error.message);
-          return reject('Không tải được video.');
+  private readonly platformAspectRatios: Record<string, string[]> = {
+    youtube: ['16:9', '9:16', '1:1'],
+    facebook: ['16:9', '9:16', '1:1'],
+    tiktok: ['9:16'],
+  };
+
+  // Lấy direct stream URL bằng yt-dlp (không tải về)
+  private getDirectStreamUrl(videoUrl: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const command = spawn(this.ytDlpPath, ['-f', 'best', '-g', videoUrl]);
+
+      let output = '';
+      let errorOutput = '';
+
+      // Lắng nghe output từ yt-dlp
+      command.stdout.on('data', (data) => {
+        output += data.toString();
+      });
+
+      command.stderr.on('data', (data) => {
+        errorOutput += data.toString();
+      });
+
+      // Nếu quá 10 giây chưa xong thì hủy
+      const timer = setTimeout(() => {
+        command.kill('SIGKILL'); // Hủy tiến trình
+        reject('⏱️ yt-dlp timeout sau 10s.');
+      }, 10000);
+
+      // Khi tiến trình kết thúc
+      command.on('close', (code) => {
+        clearTimeout(timer);
+        if (code === 0) {
+          resolve(output.trim());
+        } else {
+          reject(`❌ yt-dlp error: ${errorOutput.trim()}`);
         }
-        resolve(outputPath);
       });
     });
   }
 
+  // Start livestream không tải về (phát trực tiếp từ URL)
   async startLivestream(
     videoUrl: string,
     outputUrl: string,
     platform: string,
   ): Promise<void> {
     if (this.processes[platform]) {
-      throw new Error(
-        `Đã có một livestream đang chạy cho nền tảng "${platform}".`,
-      );
+      throw new Error(`Đã có livestream đang chạy cho nền tảng "${platform}".`);
     }
-    //   try {
-    //     const round = (this.loopCounts[platform] =
-    //       (this.loopCounts[platform] || 0) + 1);
-    //     this.ffmpegGateway.sendLog(platform, `🔁 Bắt đầu vòng phát ${round}`);
-    //     this.ffmpegGateway.sendStatus(platform, 'start', round);
 
-    //     const videoPath = await this.downloadVideo(videoUrl);
+    const directUrl = await this.getDirectStreamUrl(videoUrl);
 
-    //     const process = ffmpeg()
-    //       .input(videoPath)
-    //       .inputOptions('-re')
-    //       .inputOptions('-stream_loop', '-1') // Vòng lặp video
-    //       .videoCodec('libx264')
-    //       .audioCodec('aac')
-    //       .addOption('-preset', 'ultrafast')
-    //       .addOption('-tune', 'zerolatency')
-    //       .outputOptions('-f', 'flv')
-    //       .output(outputUrl)
-    //       .on('start', () => {
-    //         console.log(`FFmpeg started for ${platform} | vòng ${round}`);
-    //       })
-    //       .on('end', async () => {
-    //         this.ffmpegGateway.sendLog(
-    //           platform,
-    //           `✅ Kết thúc vòng ${round}, chuẩn bị phát lại`,
-    //         );
-    //         this.ffmpegGateway.sendStatus(platform, 'end', round);
+    const process = ffmpeg()
+      .input(directUrl)
+      .inputOptions('-re') // Đọc realtime từ network
+      .inputOptions('-stream_loop', '-1') // Lặp vô hạn (chỉ có tác dụng nếu là file, nhưng để yên cũng ko sao)
+      .videoCodec('libx264')
+      .audioCodec('aac')
+      .addOption('-preset', 'ultrafast')
+      .addOption('-tune', 'zerolatency')
+      .outputOptions('-f', 'flv')
+      .output(outputUrl)
+      .on('start', () => {
+        console.log(`FFmpeg started for ${platform}`);
+        this.ffmpegGateway.sendLog(platform, '🚀 Bắt đầu livestream');
+        this.ffmpegGateway.sendStatus(platform, 'start');
+      })
+      .on('end', () => {
+        delete this.processes[platform];
+        this.ffmpegGateway.sendLog(platform, '✅ Livestream kết thúc');
+        this.ffmpegGateway.sendStatus(platform, 'end');
+      })
+      .on('error', (err) => {
+        console.error(`FFmpeg error for "${platform}": ${err.message}`);
+        delete this.processes[platform];
+        this.ffmpegGateway.sendLog(platform, `❌ Lỗi: ${err.message}`);
+        this.ffmpegGateway.sendStatus(platform, 'error');
+      });
 
-    //         delete this.processes[platform];
-    //         fs.rmSync(videoPath, { force: true });
-    //         await loopStream(); // 🔁 Phát lại
-    //       })
-    //       .on('error', (err) => {
-    //         this.ffmpegGateway.sendLog(
-    //           platform,
-    //           `❌ Lỗi vòng ${round}: ${err.message}`,
-    //         );
-    //         this.ffmpegGateway.sendStatus(platform, 'error', round);
-
-    //         console.error(`FFmpeg error for "${platform}":`, err.message);
-    //         delete this.processes[platform];
-    //         fs.rmSync(videoPath, { force: true });
-    //       });
-
-    //     this.processes[platform] = process;
-    //     process.run();
-    //   } catch (err) {
-    //     const msg =
-    //       typeof err === 'string'
-    //         ? err
-    //         : 'Lỗi không xác định khi tải hoặc phát video';
-    //     this.ffmpegGateway.sendLog(platform, `❌ ${msg}`);
-    //     this.ffmpegGateway.sendStatus(platform, 'error');
-    //     throw new Error(msg);
-    //   }
-    // };
-
-    // await loopStream();
+    this.processes[platform] = process;
+    process.run();
   }
 
+  // Stop livestream
   stopLivestream(platform: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const process: any = this.processes[platform];
@@ -153,47 +141,38 @@ export class FfmpegService {
     });
   }
 
-  private readonly platformAspectRatios: Record<string, string[]> = {
-    youtube: ['16:9', '9:16', '1:1'],
-    facebook: ['16:9', '9:16', '1:1'],
-    tiktok: ['9:16'],
-  };
-
+  // Kiểm tra aspect ratio (không tải về, dùng ffprobe trên direct stream URL)
   async checkVideoAspectRatio(
     videoUrl: string,
     platform: string,
-  ): Promise<AspectRatioResult> {
+  ): Promise<{
+    width: number;
+    height: number;
+    aspectRatio: string;
+    valid: boolean;
+    expectedAspectRatios: string[];
+  }> {
     const expectedRatios = this.platformAspectRatios[platform.toLowerCase()];
     if (!expectedRatios)
       throw new Error(`Không hỗ trợ kiểm tra platform "${platform}".`);
 
-    const videoPath = await this.downloadVideo(videoUrl);
+    const directUrl = await this.getDirectStreamUrl(videoUrl);
 
     return new Promise((resolve, reject) => {
-      ffmpeg.ffprobe(videoPath, (err, metadata) => {
-        fs.rmSync(videoPath, { force: true });
-
+      ffmpeg.ffprobe(directUrl, (err, metadata) => {
         if (err) {
           console.error('FFprobe error:', err);
           return reject('Không lấy được thông tin video.');
         }
 
-        const videoStream = metadata.streams.find(
-          (s) => s.codec_type === 'video',
-        );
-        if (!videoStream) return reject('Không tìm thấy stream video.');
+        const stream = metadata.streams.find((s) => s.codec_type === 'video');
+        if (!stream) return reject('Không tìm thấy stream video.');
 
-        const width = videoStream.width ?? 0;
-        const height = videoStream.height ?? 0;
+        const width = stream.width ?? 0;
+        const height = stream.height ?? 0;
+        const aspect = this.calculateAspectRatio(width, height);
 
-        const gcd = (a: number, b: number): number =>
-          b === 0 ? a : gcd(b, a % b);
-        const d = gcd(width, height);
-        const aspect = `${width / d}:${height / d}`;
-
-        const valid = expectedRatios.some((expected) =>
-          this.isApproxEqual(aspect, expected),
-        );
+        const valid = expectedRatios.some((r) => this.isApproxEqual(aspect, r));
 
         resolve({
           width,
@@ -206,12 +185,16 @@ export class FfmpegService {
     });
   }
 
+  private calculateAspectRatio(width: number, height: number): string {
+    const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+    const d = gcd(width, height);
+    return `${width / d}:${height / d}`;
+  }
+
   private isApproxEqual(actual: string, expected: string): boolean {
     const [aW, aH] = actual.split(':').map(Number);
     const [eW, eH] = expected.split(':').map(Number);
-    const actualRatio = aW / aH;
-    const expectedRatio = eW / eH;
-    const diff = Math.abs(actualRatio - expectedRatio);
-    return diff < expectedRatio * 0.02;
+    const diff = Math.abs(aW / aH - eW / eH);
+    return diff < (eW / eH) * 0.02;
   }
 }
