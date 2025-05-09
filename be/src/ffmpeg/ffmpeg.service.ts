@@ -9,7 +9,7 @@ import { FfmpegGateway } from './ffmpeg.gateway';
 
 @Injectable()
 export class FfmpegService implements OnModuleDestroy, OnApplicationShutdown {
-  private processes: Record<string, ffmpeg.FfmpegCommand> = {};
+  private processes: Record<string, { ffmpeg: ffmpeg.FfmpegCommand }> = {};
   private readonly ytDlpPath = 'D:/ffmpeg/yt-dlp.exe';
 
   constructor(private readonly ffmpegGateway: FfmpegGateway) {
@@ -18,9 +18,9 @@ export class FfmpegService implements OnModuleDestroy, OnApplicationShutdown {
     );
   }
 
-  private runYtDlp(
+  private async runYtDlp(
     videoUrl: string,
-    args: string[],
+    args: string[] = [],
     timeoutMs = 30000,
   ): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -81,22 +81,22 @@ export class FfmpegService implements OnModuleDestroy, OnApplicationShutdown {
 
     const streamOnce = async () => {
       try {
-        const directUrl = await this.runYtDlp(
-          videoUrl,
-          ['-f', 'best', '-g'],
-          30000,
-        );
+        const directUrl = await this.runYtDlp(videoUrl, ['-f', 'best', '-g']);
 
         const command = ffmpeg()
           .input(directUrl)
-          .inputOptions(['-re'])
+          .inputOptions(['-re', '-fflags +genpts']) // Phát video với tốc độ thực
+          .inputOptions(['-stream_loop', '-1']) // Lặp lại video khi hết
+          .inputOptions(['-reconnect', '1', '-reconnect_streamed', '1'])
+          .inputOptions(['-reconnect_delay_max', '5']) // Thời gian tối đa để kết nối lại
+          .inputOptions(['-reconnect_at_eof', '1']) // Kết nối lại khi video kết thúc
+          .addOption('-tune', 'zerolatency') // Tối ưu hóa cho độ trễ thấp
           .videoCodec('libx264')
           .audioCodec('aac')
           .addOption('-preset', 'ultrafast')
-          .inputOptions(['-stream_loop', '-1'])
           .outputOptions([
             '-f flv',
-            '-g 120',
+            '-g 60',
             '-keyint_min 30',
             '-sc_threshold 0',
             '-b:v 2500k',
@@ -104,6 +104,12 @@ export class FfmpegService implements OnModuleDestroy, OnApplicationShutdown {
             '-bufsize 5000k',
             '-pix_fmt yuv420p',
             '-threads 2',
+            '-r 30',
+            '-flush_packets',
+            '1', // Đẩy gói dữ liệu nhanh hơn
+            '-muxdelay',
+            '0',
+            '-s 1280x720', // Thay đổi kích thước video
           ])
           .output(outputUrl)
           .on('start', () => {
@@ -115,6 +121,11 @@ export class FfmpegService implements OnModuleDestroy, OnApplicationShutdown {
           })
           .on('end', () => {
             this.ffmpegGateway.sendLog(platform, '✅ FFmpeg đã kết thúc');
+            this.ffmpegGateway.sendLog(
+              platform,
+              '🧪 Xóa process để chuẩn bị lặp lại',
+            );
+            delete this.processes[platform]; // 🔧 Cho phép loop chạy tiếp
             this.ffmpegGateway.sendStatus(platform, 'end');
           })
           .on('error', (err) => {
@@ -122,14 +133,19 @@ export class FfmpegService implements OnModuleDestroy, OnApplicationShutdown {
               platform,
               `❌ Lỗi FFmpeg: ${err.message}`,
             );
+            this.ffmpegGateway.sendLog(
+              platform,
+              '🧪 Xóa process do lỗi để lặp lại',
+            );
+            delete this.processes[platform]; // 🔧 Quan trọng
             this.ffmpegGateway.sendStatus(platform, 'error');
           });
 
-        this.processes[platform] = command;
+        this.processes[platform] = { ffmpeg: command };
+
         command.run();
 
-        await stopCheck();
-        this.ffmpegGateway.sendLog(platform, '✅ streamOnce kết thúc');
+        await stopCheck(); // Sẽ resolve sau khi process bị xoá
       } catch (err) {
         this.ffmpegGateway.sendLog(platform, `❌ Lỗi trong streamOnce: ${err}`);
         await new Promise((res) => setTimeout(res, 5000));
@@ -138,19 +154,11 @@ export class FfmpegService implements OnModuleDestroy, OnApplicationShutdown {
 
     const loop = async () => {
       while (!stopped) {
-        try {
-          const currentIsLive = await this.isLive(videoUrl);
-          await streamOnce();
+        await streamOnce();
 
-          if (!currentIsLive && !stopped) {
-            this.ffmpegGateway.sendLog(platform, '🔁 Lặp lại streamOnce');
-            await new Promise((res) => setTimeout(res, 2000));
-          } else {
-            break; // livestream thì chỉ phát 1 lần
-          }
-        } catch (err) {
-          this.ffmpegGateway.sendLog(platform, `❌ Lỗi trong loop: ${err}`);
-          await new Promise((res) => setTimeout(res, 5000));
+        if (!stopped) {
+          this.ffmpegGateway.sendLog(platform, '🔁 Lặp lại stream sau 2 giây');
+          await new Promise((res) => setTimeout(res, 2000));
         }
       }
 
@@ -161,52 +169,43 @@ export class FfmpegService implements OnModuleDestroy, OnApplicationShutdown {
     loop();
   }
 
-  stopLivestream(platform: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const process: any = this.processes[platform];
-      if (!process) return reject(`Không có stream "${platform}"`);
+  async stopLivestream(platform: string): Promise<string> {
+    const processEntry = this.processes[platform];
+    if (!processEntry) {
+      return Promise.reject(`Không có stream "${platform}"`);
+    }
 
-      const ffmpegProc = process.ffmpegProc;
+    const { ffmpeg } = processEntry;
+
+    return new Promise((resolve) => {
       let resolved = false;
 
-      if (ffmpegProc?.stdin?.writable) {
-        ffmpegProc.stdin.write('q');
-      } else {
-        ffmpegProc?.kill?.('SIGINT');
+      try {
+        ffmpeg.kill('SIGINT');
+      } catch (error) {
+        this.ffmpegGateway.sendLog(
+          platform,
+          `❌ Error stopping FFmpeg: ${error.message}`,
+        );
       }
 
-      ffmpegProc?.on('close', () => {
+      ffmpeg?.on('end', () => {
         if (!resolved) {
           resolved = true;
-          resolve(`Đã dừng stream "${platform}"`);
+          delete this.processes[platform];
+          resolve(`✅ Đã dừng stream "${platform}"`);
         }
       });
 
+      // Fallback kill
       setTimeout(() => {
         if (!resolved) {
-          ffmpegProc?.kill?.('SIGKILL');
-          resolve(`Buộc dừng stream "${platform}" sau timeout`);
+          ffmpeg?.kill?.('SIGKILL');
+          delete this.processes[platform];
+          resolve(`⚠️ Buộc dừng stream "${platform}"`);
         }
       }, 3000);
     });
-  }
-
-  onModuleDestroy() {
-    console.log('🛑 App đang tắt');
-    for (const platform of Object.keys(this.processes)) {
-      this.stopLivestream(platform);
-    }
-  }
-
-  onApplicationShutdown(signal: string) {
-    console.log(`🛑 App shutdown (${signal})`);
-    for (const platform of Object.keys(this.processes)) {
-      this.stopLivestream(platform);
-    }
-  }
-
-  listActiveLivestreams() {
-    return Object.keys(this.processes);
   }
 
   async stopAllLivestreams(): Promise<string[]> {
@@ -217,5 +216,21 @@ export class FfmpegService implements OnModuleDestroy, OnApplicationShutdown {
     return results.map((r) =>
       r.status === 'fulfilled' ? r.value : `Lỗi: ${r.reason}`,
     );
+  }
+
+  listActiveLivestreams() {
+    return Object.keys(this.processes);
+  }
+
+  onModuleDestroy() {
+    for (const platform of Object.keys(this.processes)) {
+      this.stopLivestream(platform);
+    }
+  }
+
+  onApplicationShutdown(signal: string) {
+    for (const platform of Object.keys(this.processes)) {
+      this.stopLivestream(platform);
+    }
   }
 }
