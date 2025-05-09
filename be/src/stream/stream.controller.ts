@@ -15,7 +15,7 @@ export class StreamController {
       return { success: false, message: 'Thiếu videoUrl hoặc platform' };
     }
 
-    return await this.streamService.checkVideoForPlatform(videoUrl, platform);
+    return 1;
   }
   // YouTube
   @Post('/youtube/start')

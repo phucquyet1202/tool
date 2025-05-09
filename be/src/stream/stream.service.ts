@@ -11,7 +11,11 @@ export class StreamService {
 
   // YouTube
   startYouTubeStream(videoUrl: string, rtmpUrl: string) {
-    return this.ffmpegService.startLivestream(videoUrl, rtmpUrl, 'youtube');
+    return this.ffmpegService.loopLivestreamUntilStopped(
+      videoUrl,
+      rtmpUrl,
+      'youtube',
+    );
   }
 
   stopYouTubeStream() {
@@ -20,7 +24,11 @@ export class StreamService {
 
   // Facebook
   startFacebookStream(videoUrl: string, rtmpUrl: string) {
-    return this.ffmpegService.startLivestream(videoUrl, rtmpUrl, 'facebook');
+    return this.ffmpegService.loopLivestreamUntilStopped(
+      videoUrl,
+      rtmpUrl,
+      'facebook',
+    );
   }
 
   stopFacebookStream() {
@@ -56,33 +64,33 @@ export class StreamService {
   }
 
   // check tỉ lệ khung hình
-  async checkVideoForPlatform(videoUrl: string, platform: string) {
-    try {
-      const result = await this.ffmpegService.checkVideoAspectRatio(
-        videoUrl,
-        platform,
-      );
+  // async checkVideoForPlatform(videoUrl: string, platform: string) {
+  //   try {
+  //     const result = await this.ffmpegService.checkVideoAspectRatio(
+  //       videoUrl,
+  //       platform,
+  //     );
 
-      if (result.valid) {
-        return {
-          success: true,
-          message: `Video phù hợp tỉ lệ cho nền tảng "${platform}".`,
-          details: result,
-        };
-      } else {
-        return {
-          success: false,
-          message: `Video KHÔNG phù hợp tỉ lệ cho nền tảng "${platform}".`,
-          details: result,
-        };
-      }
-    } catch (err) {
-      return {
-        success: false,
-        message: typeof err === 'string' ? err : 'Đã xảy ra lỗi.',
-      };
-    }
-  }
+  //     if (result.valid) {
+  //       return {
+  //         success: true,
+  //         message: `Video phù hợp tỉ lệ cho nền tảng "${platform}".`,
+  //         details: result,
+  //       };
+  //     } else {
+  //       return {
+  //         success: false,
+  //         message: `Video KHÔNG phù hợp tỉ lệ cho nền tảng "${platform}".`,
+  //         details: result,
+  //       };
+  //     }
+  //   } catch (err) {
+  //     return {
+  //       success: false,
+  //       message: typeof err === 'string' ? err : 'Đã xảy ra lỗi.',
+  //     };
+  //   }
+  // }
   // // Tổng hợp
   // listAllActiveStreams() {
   //   return this.ffmpegService.listActiveLivestreams();

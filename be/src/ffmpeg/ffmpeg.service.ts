@@ -1,11 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleDestroy,
+  OnApplicationShutdown,
+} from '@nestjs/common';
 import ffmpeg from 'fluent-ffmpeg';
 import { spawn } from 'child_process';
 import { FfmpegGateway } from './ffmpeg.gateway';
 
 @Injectable()
-export class FfmpegService {
+export class FfmpegService implements OnModuleDestroy, OnApplicationShutdown {
   private processes: Record<string, ffmpeg.FfmpegCommand> = {};
+  private readonly ytDlpPath = 'D:/ffmpeg/yt-dlp.exe';
 
   constructor(private readonly ffmpegGateway: FfmpegGateway) {
     ffmpeg.setFfmpegPath(
@@ -13,188 +18,204 @@ export class FfmpegService {
     );
   }
 
-  private readonly ytDlpPath = 'D:/ffmpeg/yt-dlp.exe';
-
-  private readonly platformAspectRatios: Record<string, string[]> = {
-    youtube: ['16:9', '9:16', '1:1'],
-    facebook: ['16:9', '9:16', '1:1'],
-    tiktok: ['9:16'],
-  };
-
-  // Lấy direct stream URL bằng yt-dlp (không tải về)
-  private getDirectStreamUrl(videoUrl: string): Promise<string> {
+  private runYtDlp(
+    videoUrl: string,
+    args: string[],
+    timeoutMs = 30000,
+  ): Promise<string> {
     return new Promise((resolve, reject) => {
-      const command = spawn(this.ytDlpPath, ['-f', 'best', '-g', videoUrl]);
-
+      const command = spawn(this.ytDlpPath, [...args, videoUrl]);
       let output = '';
       let errorOutput = '';
 
-      // Lắng nghe output từ yt-dlp
-      command.stdout.on('data', (data) => {
-        output += data.toString();
-      });
-
-      command.stderr.on('data', (data) => {
-        errorOutput += data.toString();
-      });
-
-      // Nếu quá 10 giây chưa xong thì hủy
       const timer = setTimeout(() => {
-        command.kill('SIGKILL'); // Hủy tiến trình
-        reject('⏱️ yt-dlp timeout sau 10s.');
-      }, 10000);
+        command.kill('SIGKILL');
+        reject('yt-dlp timeout');
+      }, timeoutMs);
 
-      // Khi tiến trình kết thúc
+      command.stdout.on('data', (data) => (output += data.toString()));
+      command.stderr.on('data', (data) => (errorOutput += data.toString()));
+
       command.on('close', (code) => {
         clearTimeout(timer);
         if (code === 0) {
           resolve(output.trim());
         } else {
-          reject(`❌ yt-dlp error: ${errorOutput.trim()}`);
+          reject(errorOutput.trim());
         }
       });
     });
   }
 
-  // Start livestream không tải về (phát trực tiếp từ URL)
-  async startLivestream(
+  private async isLive(videoUrl: string): Promise<boolean> {
+    try {
+      const json = await this.runYtDlp(videoUrl, ['-j'], 10000);
+      const meta = JSON.parse(json);
+      return !!meta.is_live;
+    } catch {
+      return false;
+    }
+  }
+
+  async loopLivestreamUntilStopped(
     videoUrl: string,
     outputUrl: string,
     platform: string,
   ): Promise<void> {
     if (this.processes[platform]) {
-      throw new Error(`Đã có livestream đang chạy cho nền tảng "${platform}".`);
+      throw new Error(`Đã có stream đang chạy cho "${platform}"`);
     }
 
-    const directUrl = await this.getDirectStreamUrl(videoUrl);
+    let stopped = false;
 
-    const process = ffmpeg()
-      .input(directUrl)
-      .inputOptions('-re') // Đọc realtime từ network
-      .inputOptions('-stream_loop', '-1') // Lặp vô hạn (chỉ có tác dụng nếu là file, nhưng để yên cũng ko sao)
-      .videoCodec('libx264')
-      .audioCodec('aac')
-      .addOption('-preset', 'ultrafast')
-      .addOption('-tune', 'zerolatency')
-      .outputOptions('-f', 'flv')
-      .output(outputUrl)
-      .on('start', () => {
-        console.log(`FFmpeg started for ${platform}`);
-        this.ffmpegGateway.sendLog(platform, '🚀 Bắt đầu livestream');
-        this.ffmpegGateway.sendStatus(platform, 'start');
-      })
-      .on('end', () => {
-        delete this.processes[platform];
-        this.ffmpegGateway.sendLog(platform, '✅ Livestream kết thúc');
-        this.ffmpegGateway.sendStatus(platform, 'end');
-      })
-      .on('error', (err) => {
-        console.error(`FFmpeg error for "${platform}": ${err.message}`);
-        delete this.processes[platform];
-        this.ffmpegGateway.sendLog(platform, `❌ Lỗi: ${err.message}`);
-        this.ffmpegGateway.sendStatus(platform, 'error');
+    const stopCheck = () =>
+      new Promise<void>((resolve) => {
+        const interval = setInterval(() => {
+          if (!this.processes[platform]) {
+            stopped = true;
+            clearInterval(interval);
+            resolve();
+          }
+        }, 1000);
       });
 
-    this.processes[platform] = process;
-    process.run();
+    const streamOnce = async () => {
+      try {
+        const directUrl = await this.runYtDlp(
+          videoUrl,
+          ['-f', 'best', '-g'],
+          30000,
+        );
+
+        const command = ffmpeg()
+          .input(directUrl)
+          .inputOptions(['-re'])
+          .videoCodec('libx264')
+          .audioCodec('aac')
+          .addOption('-preset', 'ultrafast')
+          .inputOptions(['-stream_loop', '-1'])
+          .outputOptions([
+            '-f flv',
+            '-g 120',
+            '-keyint_min 30',
+            '-sc_threshold 0',
+            '-b:v 2500k',
+            '-maxrate 2500k',
+            '-bufsize 5000k',
+            '-pix_fmt yuv420p',
+            '-threads 2',
+          ])
+          .output(outputUrl)
+          .on('start', () => {
+            this.ffmpegGateway.sendLog(platform, '🚀 Bắt đầu stream');
+            this.ffmpegGateway.sendStatus(platform, 'start');
+          })
+          .on('stderr', (line) => {
+            this.ffmpegGateway.sendLog(platform, `📄 FFmpeg stderr: ${line}`);
+          })
+          .on('end', () => {
+            this.ffmpegGateway.sendLog(platform, '✅ FFmpeg đã kết thúc');
+            this.ffmpegGateway.sendStatus(platform, 'end');
+          })
+          .on('error', (err) => {
+            this.ffmpegGateway.sendLog(
+              platform,
+              `❌ Lỗi FFmpeg: ${err.message}`,
+            );
+            this.ffmpegGateway.sendStatus(platform, 'error');
+          });
+
+        this.processes[platform] = command;
+        command.run();
+
+        await stopCheck();
+        this.ffmpegGateway.sendLog(platform, '✅ streamOnce kết thúc');
+      } catch (err) {
+        this.ffmpegGateway.sendLog(platform, `❌ Lỗi trong streamOnce: ${err}`);
+        await new Promise((res) => setTimeout(res, 5000));
+      }
+    };
+
+    const loop = async () => {
+      while (!stopped) {
+        try {
+          const currentIsLive = await this.isLive(videoUrl);
+          await streamOnce();
+
+          if (!currentIsLive && !stopped) {
+            this.ffmpegGateway.sendLog(platform, '🔁 Lặp lại streamOnce');
+            await new Promise((res) => setTimeout(res, 2000));
+          } else {
+            break; // livestream thì chỉ phát 1 lần
+          }
+        } catch (err) {
+          this.ffmpegGateway.sendLog(platform, `❌ Lỗi trong loop: ${err}`);
+          await new Promise((res) => setTimeout(res, 5000));
+        }
+      }
+
+      this.ffmpegGateway.sendLog(platform, `🛑 Dừng stream "${platform}"`);
+      delete this.processes[platform];
+    };
+
+    loop();
   }
 
-  // Stop livestream
   stopLivestream(platform: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const process: any = this.processes[platform];
-      if (!process) {
-        return reject(
-          `Không có livestream nào đang chạy cho nền tảng "${platform}".`,
-        );
-      }
+      if (!process) return reject(`Không có stream "${platform}"`);
 
       const ffmpegProc = process.ffmpegProc;
-      if (ffmpegProc) {
-        let resolved = false;
+      let resolved = false;
 
-        ffmpegProc.on('close', () => {
-          if (!resolved) {
-            resolved = true;
-            delete this.processes[platform];
-            resolve(`Đã dừng livestream cho nền tảng "${platform}".`);
-          }
-        });
-
-        if (ffmpegProc.stdin?.writable) {
-          ffmpegProc.stdin.write('q');
-        } else {
-          ffmpegProc.kill('SIGINT');
-        }
-
-        setTimeout(() => {
-          if (!resolved) {
-            ffmpegProc.kill('SIGKILL');
-            delete this.processes[platform];
-            resolve(`Buộc dừng livestream "${platform}" sau timeout.`);
-          }
-        }, 3000);
+      if (ffmpegProc?.stdin?.writable) {
+        ffmpegProc.stdin.write('q');
       } else {
-        delete this.processes[platform];
-        resolve(`FFmpeg không tồn tại cho nền tảng "${platform}".`);
+        ffmpegProc?.kill?.('SIGINT');
       }
-    });
-  }
 
-  // Kiểm tra aspect ratio (không tải về, dùng ffprobe trên direct stream URL)
-  async checkVideoAspectRatio(
-    videoUrl: string,
-    platform: string,
-  ): Promise<{
-    width: number;
-    height: number;
-    aspectRatio: string;
-    valid: boolean;
-    expectedAspectRatios: string[];
-  }> {
-    const expectedRatios = this.platformAspectRatios[platform.toLowerCase()];
-    if (!expectedRatios)
-      throw new Error(`Không hỗ trợ kiểm tra platform "${platform}".`);
-
-    const directUrl = await this.getDirectStreamUrl(videoUrl);
-
-    return new Promise((resolve, reject) => {
-      ffmpeg.ffprobe(directUrl, (err, metadata) => {
-        if (err) {
-          console.error('FFprobe error:', err);
-          return reject('Không lấy được thông tin video.');
+      ffmpegProc?.on('close', () => {
+        if (!resolved) {
+          resolved = true;
+          resolve(`Đã dừng stream "${platform}"`);
         }
-
-        const stream = metadata.streams.find((s) => s.codec_type === 'video');
-        if (!stream) return reject('Không tìm thấy stream video.');
-
-        const width = stream.width ?? 0;
-        const height = stream.height ?? 0;
-        const aspect = this.calculateAspectRatio(width, height);
-
-        const valid = expectedRatios.some((r) => this.isApproxEqual(aspect, r));
-
-        resolve({
-          width,
-          height,
-          aspectRatio: aspect,
-          valid,
-          expectedAspectRatios: expectedRatios,
-        });
       });
+
+      setTimeout(() => {
+        if (!resolved) {
+          ffmpegProc?.kill?.('SIGKILL');
+          resolve(`Buộc dừng stream "${platform}" sau timeout`);
+        }
+      }, 3000);
     });
   }
 
-  private calculateAspectRatio(width: number, height: number): string {
-    const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
-    const d = gcd(width, height);
-    return `${width / d}:${height / d}`;
+  onModuleDestroy() {
+    console.log('🛑 App đang tắt');
+    for (const platform of Object.keys(this.processes)) {
+      this.stopLivestream(platform);
+    }
   }
 
-  private isApproxEqual(actual: string, expected: string): boolean {
-    const [aW, aH] = actual.split(':').map(Number);
-    const [eW, eH] = expected.split(':').map(Number);
-    const diff = Math.abs(aW / aH - eW / eH);
-    return diff < (eW / eH) * 0.02;
+  onApplicationShutdown(signal: string) {
+    console.log(`🛑 App shutdown (${signal})`);
+    for (const platform of Object.keys(this.processes)) {
+      this.stopLivestream(platform);
+    }
+  }
+
+  listActiveLivestreams() {
+    return Object.keys(this.processes);
+  }
+
+  async stopAllLivestreams(): Promise<string[]> {
+    const platforms = Object.keys(this.processes);
+    const results = await Promise.allSettled(
+      platforms.map((p) => this.stopLivestream(p)),
+    );
+    return results.map((r) =>
+      r.status === 'fulfilled' ? r.value : `Lỗi: ${r.reason}`,
+    );
   }
 }
