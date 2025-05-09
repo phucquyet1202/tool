@@ -51,6 +51,7 @@ export class FfmpegService implements OnModuleDestroy, OnApplicationShutdown {
     try {
       const json = await this.runYtDlp(videoUrl, ['-j'], 10000);
       const meta = JSON.parse(json);
+      console.log(meta.is_live);
       return !!meta.is_live;
     } catch {
       return false;
@@ -65,7 +66,7 @@ export class FfmpegService implements OnModuleDestroy, OnApplicationShutdown {
     if (this.processes[platform]) {
       throw new Error(`Đã có stream đang chạy cho "${platform}"`);
     }
-
+    this.isLive(videoUrl);
     let stopped = false;
 
     const stopCheck = () =>
@@ -81,12 +82,19 @@ export class FfmpegService implements OnModuleDestroy, OnApplicationShutdown {
 
     const streamOnce = async () => {
       try {
+        const isLiveStream = await this.isLive(videoUrl); // Define isLiveStream
         const directUrl = await this.runYtDlp(videoUrl, ['-f', 'best', '-g']);
 
         const command = ffmpeg()
           .input(directUrl)
-          .inputOptions(['-re', '-fflags +genpts']) // Phát video với tốc độ thực
-          .inputOptions(['-stream_loop', '-1']) // Lặp lại video khi hết
+          .inputOptions(['-re', '-fflags +genpts']); // Phát video với tốc độ thực
+
+        // 👉 Chỗ thêm / bỏ stream_loop tùy theo isLiveStream
+        if (isLiveStream == false) {
+          command.inputOptions(['-stream_loop', '-1']); // Lặp lại video khi không phải livestream
+        }
+
+        command
           .inputOptions(['-reconnect', '1', '-reconnect_streamed', '1'])
           .inputOptions(['-reconnect_delay_max', '5']) // Thời gian tối đa để kết nối lại
           .inputOptions(['-reconnect_at_eof', '1']) // Kết nối lại khi video kết thúc
