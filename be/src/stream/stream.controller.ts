@@ -20,33 +20,33 @@ export class StreamController {
   // YouTube
   @Post('/youtube/start')
   startYouTube(@Body() body: { videoUrl: string; rtmpUrl: string }) {
-    return this.streamService.startYouTubeStream(body.videoUrl, body.rtmpUrl);
+    return this.streamService.startYouTube(body.videoUrl, body.rtmpUrl);
   }
 
   @Post('/youtube/stop')
   stopYouTube() {
-    return this.streamService.stopYouTubeStream();
+    return this.streamService.stopYouTube();
   }
 
   // Facebook
   @Post('/facebook/start')
   startFacebook(@Body() body: { videoUrl: string; rtmpUrl: string }) {
-    return this.streamService.startFacebookStream(body.videoUrl, body.rtmpUrl);
+    return this.streamService.startFacebook(body.videoUrl, body.rtmpUrl);
   }
 
   @Post('/facebook/stop')
   stopFacebook() {
-    return this.streamService.stopFacebookStream();
+    return this.streamService.stopFacebook();
   }
 
   // TikTok (OBS)
-  @Post('/tiktok/start')
-  startTikTok(@Body() body: { videoUrl: string }) {
-    return this.streamService.startTikTokStream(body.videoUrl);
-  }
+  // @Post('/tiktok/start')
+  // startTikTok(@Body() body: { videoUrl: string }) {
+  //   return this.streamService.startTikTokStream(body.videoUrl);
+  // }
 
-  @Post('/tiktok/stop')
-  stopTikTok() {
-    return this.streamService.stopTikTokStream();
-  }
+  // @Post('/tiktok/stop')
+  // stopTikTok() {
+  //   return this.streamService.stopTikTokStream();
+  // }
 }

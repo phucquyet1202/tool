@@ -1,62 +1,50 @@
 export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
-  name: "Next.js + HeroUI",
-  description: "Make beautiful websites regardless of your design experience.",
+  name: "Tool live stream",
+  description: "Live stream tool for Facebook and Youtube.",
   navItems: [
     {
       label: "Home",
       href: "/",
     },
     {
-      label: "Docs",
-      href: "/docs",
+      label: "Youtube",
+      href: "/youtube",
     },
     {
-      label: "Pricing",
-      href: "/pricing",
+      label: "Facebook",
+      href: "/facebook",
     },
     {
-      label: "Blog",
-      href: "/blog",
+      label: "Payment",
+      href: "/payment",
     },
     {
-      label: "About",
-      href: "/about",
+      label: "History",
+      href: "/history",
     },
   ],
   navMenuItems: [
     {
-      label: "Profile",
-      href: "/profile",
+      label: "Home",
+      href: "/",
     },
     {
-      label: "Dashboard",
-      href: "/dashboard",
+      label: "Youtube",
+      href: "/youtube",
     },
     {
-      label: "Projects",
-      href: "/projects",
+      label: "Facebook",
+      href: "/facebook",
     },
     {
-      label: "Team",
-      href: "/team",
+      label: "Payment",
+      href: "/payment",
     },
     {
-      label: "Calendar",
-      href: "/calendar",
-    },
-    {
-      label: "Settings",
-      href: "/settings",
-    },
-    {
-      label: "Help & Feedback",
-      href: "/help-feedback",
-    },
-    {
-      label: "Logout",
-      href: "/logout",
+      label: "History",
+      href: "/history",
     },
   ],
   links: {
