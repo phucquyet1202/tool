@@ -53,7 +53,7 @@ def build_encode_command(gst_path, direct_url, rtmp_url):
         'd.', '!', 'queue', '!', 'videoconvert', '!', 'videoscale', '!',
         'video/x-raw,width=1920,height=1080', '!',
         'x264enc',
-            'bitrate=6000',
+            'bitrate=5000',
             'speed-preset=veryfast',
             'tune=zerolatency',
             'key-int-max=60',

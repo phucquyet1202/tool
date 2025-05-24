@@ -1,5 +1,5 @@
 // src/payment/payment.controller.ts
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 
 @Controller('payment')
@@ -16,7 +16,15 @@ export class PaymentController {
   }
 
   @Post('callback') // Đây là URL callback PayOS gọi về
-  handleCallback(@Body() payload: any) {
+  handleCallback(
+    @Body()
+    payload: {
+      orderCode: string;
+      amount: number;
+      status: string;
+      description?: string;
+    },
+  ) {
     return this.paymentService.handlePayOSCallback(payload);
   }
 }

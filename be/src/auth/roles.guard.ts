@@ -21,7 +21,10 @@ export class RolesGuard implements CanActivate {
       return true; // Không yêu cầu role, cho qua
     }
 
-    const { user } = context.switchToHttp().getRequest();
+    const request = context
+      .switchToHttp()
+      .getRequest<{ user?: { data?: { role?: string[] } } }>();
+    const { user } = request;
     if (!user) {
       throw new ForbiddenException('Bạn chưa đăng nhập');
     }

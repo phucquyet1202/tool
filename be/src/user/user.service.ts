@@ -53,14 +53,14 @@ export class UserService {
       data: user,
     });
   }
-  async login(user: any) {
+  login(user: { id: string }) {
     const payload = { sub: user.id };
     return {
       access_token: this.jwtService.sign(payload),
     };
   }
   async findOneByToken(token: string) {
-    const { sub } = await this.jwtService.verify(token);
+    const { sub } = this.jwtService.verify<{ sub: string }>(token);
     const user = await this.prisma.user.findUnique({
       where: { id: sub },
     });
@@ -78,7 +78,7 @@ export class UserService {
   }
   async findAll(filter: UpdateUserDto) {
     const { name, email, page = 1, limit = 10 } = filter;
-    const where: any = {};
+    const where: { name?: object; email?: object } = {};
 
     if (name) where.name = { contains: name, mode: 'insensitive' };
     if (email) where.email = { contains: email, mode: 'insensitive' };

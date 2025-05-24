@@ -15,7 +15,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (req: Request) => {
-          return req?.cookies?.token || null;
+          return (req?.cookies?.token as string) || null;
         },
       ]),
       ignoreExpiration: false,
@@ -27,12 +27,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
-    const user: any = await this.userService.findOne(payload.sub);
+  async validate(payload: { sub: string }) {
+    const user = await this.userService.findOne(payload.sub);
     if (!user) {
       throw new UnauthorizedException('Bạn chưa đăng nhập');
     }
-    user.password = undefined;
+    if ('password' in user) {
+      (user as Record<string, unknown>).password = undefined;
+    }
     return user;
   }
 }

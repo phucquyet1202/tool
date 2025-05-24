@@ -10,6 +10,7 @@ import {
   Request,
   Res,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -17,6 +18,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { cookieAccessToken } from 'src/common/cookie/cookie';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { Response } from 'express';
 
 @Controller('user')
 export class UserController {
@@ -28,8 +30,11 @@ export class UserController {
   }
   @Post('/login')
   @UseGuards(AuthGuard('local'))
-  async login(@Request() req, @Res({ passthrough: true }) res: Response) {
-    const token = await this.userService.login(req.user);
+  login(
+    @Request() req: { user: any },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const token = this.userService.login(req.user as { id: string });
     cookieAccessToken(res, token);
     return {
       statusCode: HttpStatus.OK,
@@ -39,8 +44,11 @@ export class UserController {
   }
   @UseGuards(JwtAuthGuard)
   @Get('/get-user-by-token')
-  async getUserByToken(@Request() req) {
+  async getUserByToken(@Request() req: { cookies: { token?: string } }) {
     const token = req.cookies.token;
+    if (!token) {
+      throw new UnauthorizedException('Bạn chưa đăng nhập');
+    }
     return await this.userService.findOneByToken(token);
   }
   @Get()

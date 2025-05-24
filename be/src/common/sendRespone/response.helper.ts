@@ -12,14 +12,21 @@ export const sendResponse = <T = any>(options: SendResponseOptions<T>) => {
   // Nếu có exception truyền vào
   if (options.exception instanceof HttpException) {
     const status = options.exception.getStatus();
-    const response = options.exception.getResponse();
+    const response = options.exception.getResponse() as
+      | string
+      | { message?: string };
 
     return {
       statusCode: status,
       message:
         typeof response === 'string'
           ? response
-          : (response as any)?.message || 'Lỗi hệ thống',
+          : typeof response === 'object' &&
+              response !== null &&
+              'message' in response &&
+              typeof response.message === 'string'
+            ? response.message
+            : 'Lỗi hệ thống',
       data: null,
       error: response,
     };
@@ -30,6 +37,6 @@ export const sendResponse = <T = any>(options: SendResponseOptions<T>) => {
     statusCode: options.statusCode ?? 200,
     message: options.message ?? 'Success',
     data: options.data ?? null,
-    error: options.error ?? null,
+    error: (options.error ?? null) as unknown,
   };
 };

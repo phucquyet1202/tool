@@ -3,7 +3,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateHistoryDto } from './dto/create-history.dto';
 import { UpdateHistoryDto } from './dto/update-history.dto';
 import { sendResponse } from 'src/common/sendRespone/response.helper';
-import { B } from 'obs-websocket-js/dist/base-DKN2XRg2';
 
 @Injectable()
 export class HistoryService {

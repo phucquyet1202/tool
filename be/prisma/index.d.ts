@@ -1228,6 +1228,9 @@ export namespace Prisma {
     role: $Enums.Role | null
     created_at: Date | null
     updated_at: Date | null
+    status_yt: boolean | null
+    status_fb: boolean | null
+    status_tt: boolean | null
   }
 
   export type UserMaxAggregateOutputType = {
@@ -1238,6 +1241,9 @@ export namespace Prisma {
     role: $Enums.Role | null
     created_at: Date | null
     updated_at: Date | null
+    status_yt: boolean | null
+    status_fb: boolean | null
+    status_tt: boolean | null
   }
 
   export type UserCountAggregateOutputType = {
@@ -1248,6 +1254,9 @@ export namespace Prisma {
     role: number
     created_at: number
     updated_at: number
+    status_yt: number
+    status_fb: number
+    status_tt: number
     _all: number
   }
 
@@ -1260,6 +1269,9 @@ export namespace Prisma {
     role?: true
     created_at?: true
     updated_at?: true
+    status_yt?: true
+    status_fb?: true
+    status_tt?: true
   }
 
   export type UserMaxAggregateInputType = {
@@ -1270,6 +1282,9 @@ export namespace Prisma {
     role?: true
     created_at?: true
     updated_at?: true
+    status_yt?: true
+    status_fb?: true
+    status_tt?: true
   }
 
   export type UserCountAggregateInputType = {
@@ -1280,6 +1295,9 @@ export namespace Prisma {
     role?: true
     created_at?: true
     updated_at?: true
+    status_yt?: true
+    status_fb?: true
+    status_tt?: true
     _all?: true
   }
 
@@ -1363,6 +1381,9 @@ export namespace Prisma {
     role: $Enums.Role
     created_at: Date
     updated_at: Date
+    status_yt: boolean
+    status_fb: boolean
+    status_tt: boolean
     _count: UserCountAggregateOutputType | null
     _min: UserMinAggregateOutputType | null
     _max: UserMaxAggregateOutputType | null
@@ -1390,6 +1411,9 @@ export namespace Prisma {
     role?: boolean
     created_at?: boolean
     updated_at?: boolean
+    status_yt?: boolean
+    status_fb?: boolean
+    status_tt?: boolean
     orders?: boolean | User$ordersArgs<ExtArgs>
     histories?: boolean | User$historiesArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -1405,9 +1429,12 @@ export namespace Prisma {
     role?: boolean
     created_at?: boolean
     updated_at?: boolean
+    status_yt?: boolean
+    status_fb?: boolean
+    status_tt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "password" | "name" | "role" | "created_at" | "updated_at", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "password" | "name" | "role" | "created_at" | "updated_at" | "status_yt" | "status_fb" | "status_tt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     orders?: boolean | User$ordersArgs<ExtArgs>
     histories?: boolean | User$historiesArgs<ExtArgs>
@@ -1428,6 +1455,9 @@ export namespace Prisma {
       role: $Enums.Role
       created_at: Date
       updated_at: Date
+      status_yt: boolean
+      status_fb: boolean
+      status_tt: boolean
     }, ExtArgs["result"]["user"]>
     composites: {}
   }
@@ -1806,6 +1836,9 @@ export namespace Prisma {
     readonly role: FieldRef<"User", 'Role'>
     readonly created_at: FieldRef<"User", 'DateTime'>
     readonly updated_at: FieldRef<"User", 'DateTime'>
+    readonly status_yt: FieldRef<"User", 'Boolean'>
+    readonly status_fb: FieldRef<"User", 'Boolean'>
+    readonly status_tt: FieldRef<"User", 'Boolean'>
   }
     
 
@@ -5202,7 +5235,10 @@ export namespace Prisma {
     name: 'name',
     role: 'role',
     created_at: 'created_at',
-    updated_at: 'updated_at'
+    updated_at: 'updated_at',
+    status_yt: 'status_yt',
+    status_fb: 'status_fb',
+    status_tt: 'status_tt'
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -5328,16 +5364,16 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'Int'
+   * Reference to a field of type 'Boolean'
    */
-  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
   /**
-   * Reference to a field of type 'Boolean'
+   * Reference to a field of type 'Int'
    */
-  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
     
 
 
@@ -5369,6 +5405,9 @@ export namespace Prisma {
     role?: EnumRoleFilter<"User"> | $Enums.Role
     created_at?: DateTimeFilter<"User"> | Date | string
     updated_at?: DateTimeFilter<"User"> | Date | string
+    status_yt?: BoolFilter<"User"> | boolean
+    status_fb?: BoolFilter<"User"> | boolean
+    status_tt?: BoolFilter<"User"> | boolean
     orders?: OrderListRelationFilter
     histories?: HistoryListRelationFilter
   }
@@ -5381,6 +5420,9 @@ export namespace Prisma {
     role?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
+    status_yt?: SortOrder
+    status_fb?: SortOrder
+    status_tt?: SortOrder
     orders?: OrderOrderByRelationAggregateInput
     histories?: HistoryOrderByRelationAggregateInput
     _relevance?: UserOrderByRelevanceInput
@@ -5397,6 +5439,9 @@ export namespace Prisma {
     role?: EnumRoleFilter<"User"> | $Enums.Role
     created_at?: DateTimeFilter<"User"> | Date | string
     updated_at?: DateTimeFilter<"User"> | Date | string
+    status_yt?: BoolFilter<"User"> | boolean
+    status_fb?: BoolFilter<"User"> | boolean
+    status_tt?: BoolFilter<"User"> | boolean
     orders?: OrderListRelationFilter
     histories?: HistoryListRelationFilter
   }, "id" | "email">
@@ -5409,6 +5454,9 @@ export namespace Prisma {
     role?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
+    status_yt?: SortOrder
+    status_fb?: SortOrder
+    status_tt?: SortOrder
     _count?: UserCountOrderByAggregateInput
     _max?: UserMaxOrderByAggregateInput
     _min?: UserMinOrderByAggregateInput
@@ -5425,6 +5473,9 @@ export namespace Prisma {
     role?: EnumRoleWithAggregatesFilter<"User"> | $Enums.Role
     created_at?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updated_at?: DateTimeWithAggregatesFilter<"User"> | Date | string
+    status_yt?: BoolWithAggregatesFilter<"User"> | boolean
+    status_fb?: BoolWithAggregatesFilter<"User"> | boolean
+    status_tt?: BoolWithAggregatesFilter<"User"> | boolean
   }
 
   export type OrderWhereInput = {
@@ -5645,6 +5696,9 @@ export namespace Prisma {
     role?: $Enums.Role
     created_at?: Date | string
     updated_at?: Date | string
+    status_yt?: boolean
+    status_fb?: boolean
+    status_tt?: boolean
     orders?: OrderCreateNestedManyWithoutUserInput
     histories?: HistoryCreateNestedManyWithoutUserInput
   }
@@ -5657,6 +5711,9 @@ export namespace Prisma {
     role?: $Enums.Role
     created_at?: Date | string
     updated_at?: Date | string
+    status_yt?: boolean
+    status_fb?: boolean
+    status_tt?: boolean
     orders?: OrderUncheckedCreateNestedManyWithoutUserInput
     histories?: HistoryUncheckedCreateNestedManyWithoutUserInput
   }
@@ -5669,6 +5726,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    status_yt?: BoolFieldUpdateOperationsInput | boolean
+    status_fb?: BoolFieldUpdateOperationsInput | boolean
+    status_tt?: BoolFieldUpdateOperationsInput | boolean
     orders?: OrderUpdateManyWithoutUserNestedInput
     histories?: HistoryUpdateManyWithoutUserNestedInput
   }
@@ -5681,6 +5741,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    status_yt?: BoolFieldUpdateOperationsInput | boolean
+    status_fb?: BoolFieldUpdateOperationsInput | boolean
+    status_tt?: BoolFieldUpdateOperationsInput | boolean
     orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
     histories?: HistoryUncheckedUpdateManyWithoutUserNestedInput
   }
@@ -5693,6 +5756,9 @@ export namespace Prisma {
     role?: $Enums.Role
     created_at?: Date | string
     updated_at?: Date | string
+    status_yt?: boolean
+    status_fb?: boolean
+    status_tt?: boolean
   }
 
   export type UserUpdateManyMutationInput = {
@@ -5703,6 +5769,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    status_yt?: BoolFieldUpdateOperationsInput | boolean
+    status_fb?: BoolFieldUpdateOperationsInput | boolean
+    status_tt?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type UserUncheckedUpdateManyInput = {
@@ -5713,6 +5782,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    status_yt?: BoolFieldUpdateOperationsInput | boolean
+    status_fb?: BoolFieldUpdateOperationsInput | boolean
+    status_tt?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type OrderCreateInput = {
@@ -5981,6 +6053,11 @@ export namespace Prisma {
     not?: NestedDateTimeFilter<$PrismaModel> | Date | string
   }
 
+  export type BoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
   export type OrderListRelationFilter = {
     every?: OrderWhereInput
     some?: OrderWhereInput
@@ -6020,6 +6097,9 @@ export namespace Prisma {
     role?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
+    status_yt?: SortOrder
+    status_fb?: SortOrder
+    status_tt?: SortOrder
   }
 
   export type UserMaxOrderByAggregateInput = {
@@ -6030,6 +6110,9 @@ export namespace Prisma {
     role?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
+    status_yt?: SortOrder
+    status_fb?: SortOrder
+    status_tt?: SortOrder
   }
 
   export type UserMinOrderByAggregateInput = {
@@ -6040,6 +6123,9 @@ export namespace Prisma {
     role?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
+    status_yt?: SortOrder
+    status_fb?: SortOrder
+    status_tt?: SortOrder
   }
 
   export type StringWithAggregatesFilter<$PrismaModel = never> = {
@@ -6102,6 +6188,14 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
   export type IntFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel>
     in?: number[]
@@ -6111,11 +6205,6 @@ export namespace Prisma {
     gt?: number | IntFieldRefInput<$PrismaModel>
     gte?: number | IntFieldRefInput<$PrismaModel>
     not?: NestedIntFilter<$PrismaModel> | number
-  }
-
-  export type BoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
   }
 
   export type UserScalarRelationFilter = {
@@ -6199,14 +6288,6 @@ export namespace Prisma {
     _sum?: NestedIntFilter<$PrismaModel>
     _min?: NestedIntFilter<$PrismaModel>
     _max?: NestedIntFilter<$PrismaModel>
-  }
-
-  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type HistoryOrderByRelevanceInput = {
@@ -6352,6 +6433,10 @@ export namespace Prisma {
     set?: Date | string
   }
 
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
+  }
+
   export type OrderUpdateManyWithoutUserNestedInput = {
     create?: XOR<OrderCreateWithoutUserInput, OrderUncheckedCreateWithoutUserInput> | OrderCreateWithoutUserInput[] | OrderUncheckedCreateWithoutUserInput[]
     connectOrCreate?: OrderCreateOrConnectWithoutUserInput | OrderCreateOrConnectWithoutUserInput[]
@@ -6434,10 +6519,6 @@ export namespace Prisma {
     decrement?: number
     multiply?: number
     divide?: number
-  }
-
-  export type BoolFieldUpdateOperationsInput = {
-    set?: boolean
   }
 
   export type UserUpdateOneRequiredWithoutOrdersNestedInput = {
@@ -6556,6 +6637,11 @@ export namespace Prisma {
     not?: NestedDateTimeFilter<$PrismaModel> | Date | string
   }
 
+  export type NestedBoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
   export type NestedStringWithAggregatesFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[]
@@ -6638,9 +6724,12 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
-  export type NestedBoolFilter<$PrismaModel = never> = {
+  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
@@ -6668,14 +6757,6 @@ export namespace Prisma {
     gt?: number | FloatFieldRefInput<$PrismaModel>
     gte?: number | FloatFieldRefInput<$PrismaModel>
     not?: NestedFloatFilter<$PrismaModel> | number
-  }
-
-  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type NestedEnumStatusFilter<$PrismaModel = never> = {
@@ -6822,6 +6903,9 @@ export namespace Prisma {
     role?: $Enums.Role
     created_at?: Date | string
     updated_at?: Date | string
+    status_yt?: boolean
+    status_fb?: boolean
+    status_tt?: boolean
     histories?: HistoryCreateNestedManyWithoutUserInput
   }
 
@@ -6833,6 +6917,9 @@ export namespace Prisma {
     role?: $Enums.Role
     created_at?: Date | string
     updated_at?: Date | string
+    status_yt?: boolean
+    status_fb?: boolean
+    status_tt?: boolean
     histories?: HistoryUncheckedCreateNestedManyWithoutUserInput
   }
 
@@ -6888,6 +6975,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    status_yt?: BoolFieldUpdateOperationsInput | boolean
+    status_fb?: BoolFieldUpdateOperationsInput | boolean
+    status_tt?: BoolFieldUpdateOperationsInput | boolean
     histories?: HistoryUpdateManyWithoutUserNestedInput
   }
 
@@ -6899,6 +6989,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    status_yt?: BoolFieldUpdateOperationsInput | boolean
+    status_fb?: BoolFieldUpdateOperationsInput | boolean
+    status_tt?: BoolFieldUpdateOperationsInput | boolean
     histories?: HistoryUncheckedUpdateManyWithoutUserNestedInput
   }
 
@@ -6939,6 +7032,9 @@ export namespace Prisma {
     role?: $Enums.Role
     created_at?: Date | string
     updated_at?: Date | string
+    status_yt?: boolean
+    status_fb?: boolean
+    status_tt?: boolean
     orders?: OrderCreateNestedManyWithoutUserInput
   }
 
@@ -6950,6 +7046,9 @@ export namespace Prisma {
     role?: $Enums.Role
     created_at?: Date | string
     updated_at?: Date | string
+    status_yt?: boolean
+    status_fb?: boolean
+    status_tt?: boolean
     orders?: OrderUncheckedCreateNestedManyWithoutUserInput
   }
 
@@ -6977,6 +7076,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    status_yt?: BoolFieldUpdateOperationsInput | boolean
+    status_fb?: BoolFieldUpdateOperationsInput | boolean
+    status_tt?: BoolFieldUpdateOperationsInput | boolean
     orders?: OrderUpdateManyWithoutUserNestedInput
   }
 
@@ -6988,6 +7090,9 @@ export namespace Prisma {
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    status_yt?: BoolFieldUpdateOperationsInput | boolean
+    status_fb?: BoolFieldUpdateOperationsInput | boolean
+    status_tt?: BoolFieldUpdateOperationsInput | boolean
     orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
   }
 

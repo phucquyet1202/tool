@@ -26,17 +26,19 @@ enum Status {
 }
 
 model User {
-  id         String   @id @default(uuid())
-  email      String   @unique
+  id         String    @id @default(uuid())
+  email      String    @unique
   password   String
   name       String?
-  role       Role     @default(USER)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
+  role       Role      @default(USER)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  status_yt  Boolean   @default(false) // Trạng thái tài khoản Youtube
+  status_fb  Boolean   @default(false) // Trạng thái tài khoản Facebook
+  status_tt  Boolean   @default(false) // Trạng thái tài khoản Tiktok
   // Quan hệ
-  orders    Order[]
-  histories History[]
+  orders     Order[]
+  histories  History[]
 }
 
 model Order {

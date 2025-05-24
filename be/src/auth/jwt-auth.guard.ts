@@ -3,7 +3,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  handleRequest(err: any, user: any) {
+  handleRequest<TUser = any>(err: any, user: TUser): TUser {
     if (err || !user) {
       throw err || new UnauthorizedException('Bạn chưa đăng nhập');
     }

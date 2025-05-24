@@ -1,7 +1,6 @@
 // src/payment/payment.service.ts
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreatePaymentTransactionDto } from './dto/create-payment.dto';
 import { Status } from 'prisma';
 import { sendResponse } from 'src/common/sendRespone/response.helper';
 import { payos } from './payos.helper';

@@ -127,7 +127,10 @@ exports.Prisma.UserScalarFieldEnum = {
   name: 'name',
   role: 'role',
   created_at: 'created_at',
-  updated_at: 'updated_at'
+  updated_at: 'updated_at',
+  status_yt: 'status_yt',
+  status_fb: 'status_fb',
+  status_tt: 'status_tt'
 };
 
 exports.Prisma.OrderScalarFieldEnum = {

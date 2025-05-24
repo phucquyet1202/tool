@@ -62,7 +62,7 @@ export class OrderService {
   }
 
   async remove(id: string) {
-    const Order = this.prisma.order.delete({ where: { id } });
+    const Order = await this.prisma.order.delete({ where: { id } });
     if (!Order) {
       throw new BadRequestException('Xóa đơn hàng không thành công!');
     }

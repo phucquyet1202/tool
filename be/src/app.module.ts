@@ -9,7 +9,6 @@ import { PaymentModule } from './payment/payment.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { LivestreamModule } from './livestream/livestream.module';
-import { NmsModule } from './nms/nms.module';
 
 @Module({
   imports: [
