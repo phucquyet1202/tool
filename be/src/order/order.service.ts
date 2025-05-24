@@ -8,8 +8,16 @@ import { sendResponse } from 'src/common/sendRespone/response.helper';
 export class OrderService {
   constructor(private prisma: PrismaService) {}
 
-  create(dto: CreateOrderDto) {
-    return this.prisma.order.create({ data: dto });
+  async create(dto: CreateOrderDto) {
+    const order = await this.prisma.order.create({ data: dto });
+    if (!order) {
+      throw new BadRequestException('Tạo đơn hàng không thành công!');
+    }
+    return sendResponse({
+      statusCode: 201,
+      message: 'Tạo đơn hàng thành công!',
+      data: order,
+    });
   }
 
   async findAll(page = 1, limit = 10) {

@@ -8,8 +8,16 @@ import { sendResponse } from 'src/common/sendRespone/response.helper';
 export class HistoryService {
   constructor(private prisma: PrismaService) {}
 
-  create(dto: CreateHistoryDto) {
-    return this.prisma.history.create({ data: dto });
+  async create(dto: CreateHistoryDto) {
+    const history = await this.prisma.history.create({ data: dto });
+    if (!history) {
+      throw new BadRequestException('Tạo lịch sử không thành công!');
+    }
+    return sendResponse({
+      statusCode: 201,
+      message: 'Tạo lịch sử thành công!',
+      data: history,
+    });
   }
 
   async findAll(page = 1, limit = 10) {

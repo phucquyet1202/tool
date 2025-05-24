@@ -1,11 +1,14 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { LivestreamService } from './livestream.service';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { LivestreamExpirationGuard } from 'src/auth/livestream-expiration.guard';
 
 @Controller('livestream')
 export class LivestreamController {
   constructor(private readonly streamService: LivestreamService) {}
 
   // YouTube
+  // @UseGuards(JwtAuthGuard, LivestreamExpirationGuard)
   @Post('/youtube/start')
   startYouTube(
     @Body()
@@ -26,13 +29,14 @@ export class LivestreamController {
       body.shufflePlaylist,
     );
   }
-
+  @UseGuards(JwtAuthGuard, LivestreamExpirationGuard)
   @Post('/youtube/stop')
   stopYouTube(@Body() body: { userId: string }) {
     return this.streamService.stopPlatform(body.userId, 'youtube');
   }
 
   // Facebook
+  @UseGuards(JwtAuthGuard, LivestreamExpirationGuard)
   @Post('/facebook/start')
   startFacebook(
     @Body()
@@ -54,6 +58,7 @@ export class LivestreamController {
     );
   }
 
+  @UseGuards(JwtAuthGuard, LivestreamExpirationGuard)
   @Post('/facebook/stop')
   stopFacebook(@Body() body: { userId: string }) {
     return this.streamService.stopPlatform(body.userId, 'facebook');
