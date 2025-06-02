@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { OrderService } from './order.service';
-import { OrderController } from './order.controller';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { ScheduleModule } from '@nestjs/schedule';
+import { PrismaService } from '../prisma/prisma.service';
+import { OrderCleanupTask } from './order-cleanup.task';
 
 @Module({
-  controllers: [OrderController],
-  providers: [OrderService, PrismaService],
+  imports: [ScheduleModule.forRoot()],
+  providers: [OrderService, OrderCleanupTask, PrismaService],
 })
 export class OrderModule {}

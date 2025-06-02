@@ -9,10 +9,21 @@ export class HistoryService {
   constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateHistoryDto) {
-    const history = await this.prisma.history.create({ data: dto });
+    const history = await this.prisma.history.create({
+      data: {
+        user_id: dto.user_id,
+        order_id: dto.order_id,
+        amount: dto.amount,
+        paid_date: new Date(dto.paid_date), // Đảm bảo là Date object
+        action: dto.action,
+        detail: dto.detail ?? null,
+      },
+    });
+
     if (!history) {
       throw new BadRequestException('Tạo lịch sử không thành công!');
     }
+
     return sendResponse({
       statusCode: 201,
       message: 'Tạo lịch sử thành công!',

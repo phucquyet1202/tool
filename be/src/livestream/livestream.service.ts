@@ -12,7 +12,7 @@ export class LivestreamService {
     rtmpUrl: string,
     loopPlaylist: boolean,
     shufflePlaylist: boolean,
-  ): string {
+  ) {
     const payload: StreamPayload = {
       userId,
       platform,
@@ -24,7 +24,7 @@ export class LivestreamService {
     return startStream(payload);
   }
 
-  stopPlatform(userId: string, platform: string): string {
+  stopPlatform(userId: string, platform: string) {
     return stopStream(userId, platform);
   }
 }

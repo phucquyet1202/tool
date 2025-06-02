@@ -14,6 +14,10 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "react-toastify";
+
+import { RegisterUser } from "@/api/user";
 
 interface RegisterForm {
   name: string;
@@ -39,7 +43,7 @@ const schema = yup.object().shape({
 export default function RegisterModal({
   isOpen,
   onOpenChange,
-  isOpenLogin,
+  // isOpenLogin,
   onOpenChangeLogin,
 }: {
   isOpen: boolean;
@@ -56,10 +60,22 @@ export default function RegisterModal({
   });
 
   const [showPassword, setShowPassword] = useState(false);
-
+  const queryClient = useQueryClient();
+  const registerMutation = useMutation({
+    mutationFn: RegisterUser,
+    onSuccess: async (success) => {
+      toast.success(success.data?.data?.message || "Đăng ký thành công!");
+      await queryClient.invalidateQueries({ queryKey: ["user"] });
+      onOpenChange(false);
+      onOpenChangeLogin(true); // mở modal đăng nhập sau khi đăng ký thành công
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Đăng ký thất bại");
+    },
+  });
   const onSubmit = (data: RegisterForm) => {
-    alert(`Đăng ký thành công cho: ${data.name}`);
-    // Thực hiện API call tại đây nếu cần
+    registerMutation.mutate(data);
+    onOpenChange(false);
   };
 
   const handleLoginClick = () => {
@@ -70,9 +86,9 @@ export default function RegisterModal({
   return (
     <Modal
       isOpen={isOpen}
-      onOpenChange={onOpenChange}
-      size="md"
       placement="center"
+      size="md"
+      onOpenChange={onOpenChange}
     >
       <ModalContent>
         <ModalHeader className="flex justify-center">Đăng ký</ModalHeader>
@@ -80,34 +96,28 @@ export default function RegisterModal({
           <ModalBody>
             <Input
               {...register("name")}
-              label="Tên"
-              variant="bordered"
-              placeholder="Tên của bạn"
               className="mt-2"
-              isInvalid={!!errors.name}
               errorMessage={errors.name?.message}
+              isInvalid={!!errors.name}
+              label="Tên"
+              placeholder="Tên của bạn"
+              variant="bordered"
             />
             <Input
               {...register("email")}
+              errorMessage={errors.email?.message}
+              isInvalid={!!errors.email}
               label="Email"
-              variant="bordered"
               placeholder="example@gmail.com"
               type="email"
-              isInvalid={!!errors.email}
-              errorMessage={errors.email?.message}
+              variant="bordered"
             />
             <Input
               {...register("password")}
-              label="Mật khẩu"
-              variant="bordered"
-              placeholder="••••••••"
-              type={showPassword ? "text" : "password"}
-              isInvalid={!!errors.password}
-              errorMessage={errors.password?.message}
               endContent={
                 <button
-                  type="button"
                   className="focus:outline-none"
+                  type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
                 >
                   {showPassword ? (
@@ -117,13 +127,19 @@ export default function RegisterModal({
                   )}
                 </button>
               }
+              errorMessage={errors.password?.message}
+              isInvalid={!!errors.password}
+              label="Mật khẩu"
+              placeholder="••••••••"
+              type={showPassword ? "text" : "password"}
+              variant="bordered"
             />
             <span className="text-sm text-center mt-2">
               Bạn đã có tài khoản?{" "}
               <Button
+                className="text-primary font-medium hover:underline"
                 style={{ background: "none", border: "none" }}
                 onClick={() => handleLoginClick()}
-                className="text-primary font-medium hover:underline"
               >
                 Đăng nhập
               </Button>

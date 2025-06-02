@@ -14,8 +14,13 @@ import { EyeFilledIcon, EyeSlashFilledIcon } from "@nextui-org/shared-icons";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import RegisterModal from "./registerModal";
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "react-toastify"; // bạn cần cài toastify và cấu hình nó ở _app.tsx
+
+import RegisterModal from "./registerModal";
+
+import { LoginUser } from "@/api/user";
 
 interface LoginForm {
   email: string;
@@ -43,7 +48,6 @@ export default function LoginModal({
   onOpenChange: (open: boolean) => void;
   isOpenRegister: boolean;
   onOpenChangeRegister: (open: boolean) => void;
-  onLoginSuccess?: () => void;
 }) {
   const {
     register,
@@ -54,10 +58,22 @@ export default function LoginModal({
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const queryClient = useQueryClient();
+
+  const loginMutation = useMutation({
+    mutationFn: LoginUser,
+    onSuccess: async () => {
+      toast.success("Đăng nhập thành công!");
+      await queryClient.invalidateQueries({ queryKey: ["user-token"] });
+      onOpenChange(false); // đóng modal
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Đăng nhập thất bại!");
+    },
+  });
 
   const onSubmit = (data: LoginForm) => {
-    alert(`Đăng nhập thành công với email: ${data.email}`);
-    // Thực hiện API call tại đây nếu cần
+    loginMutation.mutate(data);
   };
 
   const handleRegisterClick = () => {
@@ -69,9 +85,9 @@ export default function LoginModal({
     <>
       <Modal
         isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        size="md"
         placement="center"
+        size="md"
+        onOpenChange={onOpenChange}
       >
         <ModalContent>
           <ModalHeader className="flex justify-center">Đăng nhập</ModalHeader>
@@ -79,25 +95,19 @@ export default function LoginModal({
             <ModalBody>
               <Input
                 {...register("email")}
+                errorMessage={errors.email?.message}
+                isInvalid={!!errors.email}
                 label="Email"
-                variant="bordered"
                 placeholder="example@gmail.com"
                 type="email"
-                isInvalid={!!errors.email}
-                errorMessage={errors.email?.message}
+                variant="bordered"
               />
               <Input
                 {...register("password")}
-                label="Mật khẩu"
-                variant="bordered"
-                placeholder="••••••••"
-                type={showPassword ? "text" : "password"}
-                isInvalid={!!errors.password}
-                errorMessage={errors.password?.message}
                 endContent={
                   <button
-                    type="button"
                     className="focus:outline-none"
+                    type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
                   >
                     {showPassword ? (
@@ -107,30 +117,41 @@ export default function LoginModal({
                     )}
                   </button>
                 }
+                errorMessage={errors.password?.message}
+                isInvalid={!!errors.password}
+                label="Mật khẩu"
+                placeholder="••••••••"
+                type={showPassword ? "text" : "password"}
+                variant="bordered"
               />
               <span className="text-sm text-center mt-2">
                 Bạn chưa có tài khoản?{" "}
                 <Button
-                  style={{ background: "none", border: "none" }}
-                  onClick={() => handleRegisterClick()}
                   className="text-primary font-medium hover:underline"
+                  style={{ background: "none", border: "none" }}
+                  onClick={handleRegisterClick}
                 >
                   Đăng ký
                 </Button>
               </span>
             </ModalBody>
             <ModalFooter className="flex justify-center">
-              <Button color="primary" type="submit">
+              <Button
+                color="primary"
+                isLoading={loginMutation.isPending}
+                type="submit"
+              >
                 Đăng nhập
               </Button>
             </ModalFooter>
           </form>
         </ModalContent>
       </Modal>
+
       <RegisterModal
         isOpen={isOpenRegister}
-        onOpenChange={onOpenChangeRegister}
         isOpenLogin={isOpen}
+        onOpenChange={onOpenChangeRegister}
         onOpenChangeLogin={onOpenChange}
       />
     </>

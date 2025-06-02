@@ -35,6 +35,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if ('password' in user) {
       (user as Record<string, unknown>).password = undefined;
     }
-    return user;
+    return user?.data;
   }
 }

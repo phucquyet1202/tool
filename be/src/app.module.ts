@@ -9,6 +9,10 @@ import { PaymentModule } from './payment/payment.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { LivestreamModule } from './livestream/livestream.module';
+import { AuthModule } from './auth/auth.module';
+import { ToolModule } from './tool/tool.module';
+import { PlatformServiceModule } from './platform-service/platform-service.module';
+import { UsePlatformModule } from './use-platform/use-platform.module';
 
 @Module({
   imports: [
@@ -19,6 +23,10 @@ import { LivestreamModule } from './livestream/livestream.module';
     PaymentModule,
     PrismaModule,
     LivestreamModule,
+    AuthModule,
+    ToolModule,
+    PlatformServiceModule,
+    UsePlatformModule,
     // NmsModule,
   ],
   controllers: [AppController],

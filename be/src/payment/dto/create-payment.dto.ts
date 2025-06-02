@@ -1,3 +1,4 @@
+import { Status } from '@prisma/client';
 import {
   IsUUID,
   IsNumber,
@@ -5,7 +6,6 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { Status } from 'prisma';
 
 export class CreatePaymentTransactionDto {
   @IsUUID()

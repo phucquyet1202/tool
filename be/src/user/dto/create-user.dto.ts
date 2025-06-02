@@ -1,3 +1,4 @@
+import { Role } from '@prisma/client';
 import {
   IsEmail,
   IsEnum,
@@ -6,7 +7,6 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { Role } from 'prisma';
 
 export class CreateUserDto {
   @IsEmail({}, { message: 'Email không đúng định dạng' })

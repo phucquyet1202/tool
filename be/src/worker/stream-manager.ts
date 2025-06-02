@@ -3,20 +3,54 @@ import { ChildProcessWithoutNullStreams } from 'child_process';
 import { startPythonWorker } from './worker.service';
 import { StreamPayload } from 'src/livestream/types/stream-payload.interface';
 import treeKill from 'tree-kill';
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, BadRequestException } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+
+const VALID_PLATFORMS = ['youtube', 'facebook', 'tiktok'] as const;
+type Platform = (typeof VALID_PLATFORMS)[number];
 
 const runningProcesses = new Map<string, ChildProcessWithoutNullStreams>();
+const prisma = new PrismaService(); // Nếu bạn inject qua constructor thì bỏ dòng này đi.
 
 function getKey(userId: string, platform: string) {
   return `${userId}-${platform}`;
 }
 
-export function startStream(payload: StreamPayload): string {
-  const key = getKey(payload.userId, payload.platform);
+// ✅ Hàm cập nhật status
+async function updatePlatformStatus(
+  userId: string,
+  platform: string,
+  status: boolean,
+) {
+  if (!VALID_PLATFORMS.includes(platform as Platform)) {
+    console.warn(`[WARN] Platform không hợp lệ: ${platform}`);
+    return;
+  }
+
+  const field =
+    platform === 'youtube'
+      ? 'status_yt'
+      : platform === 'facebook'
+        ? 'status_fb'
+        : 'status_tt';
+  await prisma.user.update({
+    where: { id: userId },
+    data: { [field]: status },
+  });
+}
+
+// ✅ Bắt đầu stream
+export async function startStream(payload: StreamPayload): Promise<string> {
+  const { userId, platform } = payload;
+  const key = getKey(userId, platform);
+
+  if (!VALID_PLATFORMS.includes(platform as Platform)) {
+    throw new BadRequestException('Platform không hợp lệ');
+  }
 
   if (runningProcesses.has(key)) {
     throw new ConflictException(
-      `Đã có luồng chạy cho ${payload.platform} của ${payload.userId}, bạn không được phép thêm luồng live khác.`,
+      `Đã có luồng chạy cho ${platform} của ${userId}, bạn không được phép thêm luồng khác.`,
     );
   }
 
@@ -30,13 +64,24 @@ export function startStream(payload: StreamPayload): string {
 
   runningProcesses.set(key, process);
 
-  return `✅ Bắt đầu phát cho ${payload.platform}`;
+  // ✅ Cập nhật trạng thái
+  await updatePlatformStatus(userId, platform, true);
+
+  return `✅ Bắt đầu phát cho ${platform}`;
 }
 
-export function stopStream(userId: string, platform: string): string {
+// ✅ Dừng stream
+export async function stopStream(
+  userId: string,
+  platform: string,
+): Promise<string> {
   const key = getKey(userId, platform);
-  const proc = runningProcesses.get(key);
 
+  if (!VALID_PLATFORMS.includes(platform as Platform)) {
+    return `⚠️ Platform không hợp lệ`;
+  }
+
+  const proc = runningProcesses.get(key);
   if (!proc) return `⚠️ Không có luồng nào đang chạy`;
 
   const pid = proc.pid;
@@ -54,5 +99,9 @@ export function stopStream(userId: string, platform: string): string {
   });
 
   runningProcesses.delete(key);
+
+  // ✅ Cập nhật trạng thái
+  await updatePlatformStatus(userId, platform, false);
+
   return `🛑 Đã gửi tín hiệu dừng phát cho ${platform}`;
 }

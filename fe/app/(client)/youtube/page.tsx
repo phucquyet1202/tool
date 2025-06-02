@@ -1,5 +1,4 @@
 import LiveDetaiYoutubelPage from "@/components/client/detail/youtube";
-import PrivateRoute from "@/components/private-route";
 import React from "react";
 
 type Props = {};

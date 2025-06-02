@@ -17,10 +17,14 @@ import { PrismaModule } from 'src/prisma/prisma.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: configService.get<string>('EXPIRES_IN') },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+        console.log('DEBUG secret:', secret); // Thêm dòng này để kiểm tra
+        return {
+          secret: configService.get<string>('JWT_SECRET'),
+          signOptions: { expiresIn: configService.get<string>('EXPIRES_IN') },
+        };
+      },
     }),
   ],
   providers: [AuthService, LocalStrategy, JwtStrategy],

@@ -12,7 +12,7 @@ import { HistoryService } from './history.service';
 import { CreateHistoryDto } from './dto/create-history.dto';
 import { UpdateHistoryDto } from './dto/update-history.dto';
 
-@Controller('histories')
+@Controller('history')
 export class HistoryController {
   constructor(private readonly historyService: HistoryService) {}
 

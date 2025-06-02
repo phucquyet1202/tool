@@ -1,4 +1,11 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Request,
+  SetMetadata,
+} from '@nestjs/common';
 import { LivestreamService } from './livestream.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { LivestreamExpirationGuard } from 'src/auth/livestream-expiration.guard';
@@ -8,20 +15,24 @@ export class LivestreamController {
   constructor(private readonly streamService: LivestreamService) {}
 
   // YouTube
-  // @UseGuards(JwtAuthGuard, LivestreamExpirationGuard)
+  @SetMetadata('platform', 'YOUTUBE')
+  @UseGuards(
+    JwtAuthGuard,
+    // LivestreamExpirationGuard
+  )
   @Post('/youtube/start')
   startYouTube(
     @Body()
     body: {
-      userId: string; // userId cần được truyền từ client
       videoUrls: string[];
       rtmpUrl: string;
       loopPlaylist: boolean;
       shufflePlaylist: boolean;
     },
+    @Request() req: Request & { user?: { id: string } }, // Lấy userId từ request với kiểu an toàn
   ) {
     return this.streamService.startPlatform(
-      body.userId, // userId cần được truyền từ client
+      req.user?.id ?? '', // Lấy userId từ token đã được xác thực, đảm bảo truyền string
       'youtube',
       body.videoUrls,
       body.rtmpUrl,
@@ -29,13 +40,18 @@ export class LivestreamController {
       body.shufflePlaylist,
     );
   }
-  @UseGuards(JwtAuthGuard, LivestreamExpirationGuard)
+  @SetMetadata('platform', 'YOUTUBE')
+  @UseGuards(
+    JwtAuthGuard,
+    // LivestreamExpirationGuard
+  )
   @Post('/youtube/stop')
-  stopYouTube(@Body() body: { userId: string }) {
-    return this.streamService.stopPlatform(body.userId, 'youtube');
+  stopYouTube(@Request() req: Request & { user?: { id: string } }) {
+    return this.streamService.stopPlatform(req.user?.id ?? '', 'youtube');
   }
 
   // Facebook
+  @SetMetadata('platform', 'FACEBOOK')
   @UseGuards(JwtAuthGuard, LivestreamExpirationGuard)
   @Post('/facebook/start')
   startFacebook(
@@ -47,9 +63,10 @@ export class LivestreamController {
       loopPlaylist: boolean;
       shufflePlaylist: boolean;
     },
+    @Request() req: Request & { user?: { id: string } }, // Lấy userId từ request với kiểu an toàn
   ) {
     return this.streamService.startPlatform(
-      body.userId, // userId cần được truyền từ client
+      req.user?.id ?? '', // đảm bảo truyền string
       'facebook',
       body.videoUrls,
       body.rtmpUrl,
@@ -58,10 +75,11 @@ export class LivestreamController {
     );
   }
 
+  @SetMetadata('platform', 'FACEBOOK')
   @UseGuards(JwtAuthGuard, LivestreamExpirationGuard)
   @Post('/facebook/stop')
-  stopFacebook(@Body() body: { userId: string }) {
-    return this.streamService.stopPlatform(body.userId, 'facebook');
+  stopFacebook(@Request() req: Request & { user?: { id: string } }) {
+    return this.streamService.stopPlatform(req.user?.id ?? '', 'facebook');
   }
 
   // TikTok, Twitch... có thể thêm tương tự

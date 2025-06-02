@@ -16,7 +16,10 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { cookieAccessToken } from 'src/common/cookie/cookie';
+import {
+  clearCookieAccessToken,
+  cookieAccessToken,
+} from 'src/common/cookie/cookie';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { Response } from 'express';
 import { Roles } from 'src/auth/roles.decorator';
@@ -74,5 +77,21 @@ export class UserController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.userService.remove(id);
+  }
+  @UseGuards(JwtAuthGuard)
+  @Post('/logout')
+  logout(
+    @Request() req: { cookies: { token?: string } },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const token = req.cookies.token;
+    if (!token) {
+      throw new UnauthorizedException('Bạn chưa đăng nhập');
+    }
+    clearCookieAccessToken(res);
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Đăng xuất thành công!',
+    };
   }
 }

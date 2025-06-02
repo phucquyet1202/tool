@@ -1,12 +1,13 @@
 "use client";
 
-import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
-import { useDisclosure, Link } from "@nextui-org/react";
-import LoginModal from "@/components/client/auth/loginModal";
+import { useDisclosure } from "@nextui-org/react";
 import NextLink from "next/link";
 import clsx from "clsx";
 import { link as linkStyles } from "@heroui/theme";
+
+import LoginModal from "@/components/client/auth/loginModal";
+import { useAuth } from "@/context/auth-context";
 
 interface NavLinkProps {
   label: string;
@@ -55,14 +56,9 @@ export default function NavLink({ label, href }: NavLinkProps) {
 
       <LoginModal
         isOpen={isOpenLogin}
-        onOpenChange={onChangeLogin}
         isOpenRegister={isOpenRegister}
+        onOpenChange={onChangeLogin}
         onOpenChangeRegister={onChangeRegister}
-        onLoginSuccess={() => {
-          refetchUser();
-          onChangeLogin();
-          router.push(href);
-        }}
       />
     </>
   );

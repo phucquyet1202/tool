@@ -9,9 +9,12 @@ async function bootstrap() {
   app.use(cookieParser());
   app.useGlobalFilters(new AllExceptionsFilter());
   app.enableCors({
-    origin: true, // hoặc ['http://localhost:3000'] nếu frontend localhost 3000
+    origin: ['http://localhost:3001'],
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
+
   await app.listen(process.env.PORT ?? 3000);
 }
 void bootstrap();

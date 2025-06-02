@@ -17,8 +17,8 @@ export const siteConfig = {
       href: "/facebook",
     },
     {
-      label: "Payment",
-      href: "/payment",
+      label: "Tools",
+      href: "/tools",
     },
     {
       label: "History",
@@ -39,8 +39,8 @@ export const siteConfig = {
       href: "/facebook",
     },
     {
-      label: "Payment",
-      href: "/payment",
+      label: "Tools",
+      href: "/tools",
     },
     {
       label: "History",

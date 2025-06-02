@@ -12,3 +12,10 @@ export const cookieAccessToken = (res: Response, token: Token) => {
     maxAge: 60 * 60 * 1000, // 1 hour
   });
 };
+export const clearCookieAccessToken = (res: Response) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'strict',
+  });
+};

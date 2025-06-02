@@ -11,10 +11,10 @@ export class CreateOrderDto {
   days: number;
 
   @IsDateString()
-  start_date: string;
+  start_date?: string;
 
   @IsDateString()
-  end_date: string;
+  end_date?: string;
   @IsOptional()
   @IsNumber()
   page?: number;
